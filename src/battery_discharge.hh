@@ -21,100 +21,141 @@
 
 namespace gazebo
 {
-    /// \brief A plugin that simulate BRASS CP1 battery model: discharge and charge according to power models
-    class GAZEBO_VISIBLE BatteryPlugin : public ModelPlugin
-    {
-    /// \brief Constructor
-    public: BatteryPlugin();
+/// \brief A plugin that simulate BRASS CP1 battery model: discharge and charge according to power models
+class GAZEBO_VISIBLE BatteryPlugin : public ModelPlugin
+{
+  /// \brief Constructor
+public:
+  BatteryPlugin();
 
-    public: ~BatteryPlugin();
+public:
+  ~BatteryPlugin();
 
-    // Inherited.
-    public: virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
+  // Inherited.
+public:
+  virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
 
-    public: virtual void Init();
+public:
+  virtual void Init();
 
-    public: virtual void Reset();
+public:
+  virtual void Reset();
 
-    private: double OnUpdateVoltage(const common::BatteryPtr &_battery);
+private:
+  double OnUpdateVoltage(const common::BatteryPtr& _battery);
 
-    public: bool SetCharging(brass_gazebo_battery::SetCharging::Request& req,
-                             brass_gazebo_battery::SetCharging::Response& res);
+public:
+  bool SetCharging(brass_gazebo_battery::SetCharging::Request& req, brass_gazebo_battery::SetCharging::Response& res);
 
-    public: bool SetCharge(brass_gazebo_battery::SetCharge::Request& req,
-                             brass_gazebo_battery::SetCharge::Response& res);
+public:
+  bool SetCharge(brass_gazebo_battery::SetCharge::Request& req, brass_gazebo_battery::SetCharge::Response& res);
 
-    public: bool SetModelCoefficients(brass_gazebo_battery::SetCoef::Request& req,
-                                      brass_gazebo_battery::SetCoef::Response& res);
+public:
+  bool SetModelCoefficients(brass_gazebo_battery::SetCoef::Request& req, brass_gazebo_battery::SetCoef::Response& res);
 
-    public: bool SetChargingRate(brass_gazebo_battery::SetChargingRate::Request& req,
-                                 brass_gazebo_battery::SetChargingRate::Response& res);
+public:
+  bool SetChargingRate(brass_gazebo_battery::SetChargingRate::Request& req,
+                       brass_gazebo_battery::SetChargingRate::Response& res);
 
-    // Connection to the World Update events.
-    protected: event::ConnectionPtr updateConnection;
+  // Connection to the World Update events.
+protected:
+  event::ConnectionPtr updateConnection;
 
-    protected: physics::WorldPtr world;
+protected:
+  physics::WorldPtr world;
 
-    protected: physics::PhysicsEnginePtr physics;
+protected:
+  physics::PhysicsEnginePtr physics;
 
-    protected: physics::ModelPtr model;
+protected:
+  physics::ModelPtr model;
 
-    protected: physics::LinkPtr link;
+protected:
+  physics::LinkPtr link;
 
-    protected: common::BatteryPtr battery;
+protected:
+  common::BatteryPtr battery;
 
-    protected: sdf::ElementPtr sdf;
+protected:
+  sdf::ElementPtr sdf;
 
+  // E(t) = e0 + e1* Q(t)/c
+protected:
+  double et;
 
-    // E(t) = e0 + e1* Q(t)/c
-    protected: double et;
-    protected: double e0;
-    protected: double e1;
+protected:
+  double e0;
 
-    // Initial battery charge in Ah.
-    protected: double q0;
+protected:
+  double e1;
 
-    // Charge rate in A
-    // More description about charge rate: http://batteriesbyfisher.com/determining-charge-time
-    protected: double qt;
+  // Initial battery charge in Ah.
+protected:
+  double q0;
 
-    // Battery capacity in Ah.
-    protected: double c;
+  // Charge rate in A
+  // More description about charge rate: http://batteriesbyfisher.com/determining-charge-time
+protected:
+  double qt;
 
-    // Battery inner resistance in Ohm
-    protected: double r;
+  // Battery capacity in Ah.
+protected:
+  double c;
 
-    // Current low-pass filter characteristic time in seconds.
-    protected: double tau;
+  // Battery inner resistance in Ohm
+protected:
+  double r;
 
-    // Raw battery current in A.
-    protected: double iraw;
+  // Current low-pass filter characteristic time in seconds.
+protected:
+  double tau;
 
-    // Smoothed battery current in A.
-    protected: double ismooth;
+  // Raw battery current in A.
+protected:
+  double iraw;
 
-    // Instantaneous battery charge in Ah.
-    protected: double q;
+  // Smoothed battery current in A.
+protected:
+  double ismooth;
 
-    // This node is for ros communications
-    protected: std::unique_ptr<ros::NodeHandle> rosNode;
+  // Instantaneous battery charge in Ah.
+protected:
+  double q;
 
-    protected: ros::Publisher charge_state;
-    protected: ros::Publisher charge_state_mwh;
-    protected: ros::Publisher motor_power;
+  // This node is for ros communications
+protected:
+  std::unique_ptr<ros::NodeHandle> rosNode;
 
-    protected: ros::ServiceServer set_charging;
-    protected: ros::ServiceServer set_charge;
-    protected: ros::ServiceServer set_coefficients;
-    protected: ros::ServiceServer set_charging_rate;
+protected:
+  ros::Publisher charge_state;
 
-    protected: boost::mutex lock;
+protected:
+  ros::Publisher charge_state_mwh;
 
-    protected: bool charging;
+protected:
+  ros::Publisher motor_power;
 
-    protected: double sim_time_now;
+protected:
+  ros::ServiceServer set_charging;
 
-    };
-}
+protected:
+  ros::ServiceServer set_charge;
 
-#endif //BRASS_GAZEBO_BATTERY_BATTERY_DISCHARGE_H
+protected:
+  ros::ServiceServer set_coefficients;
+
+protected:
+  ros::ServiceServer set_charging_rate;
+
+protected:
+  boost::mutex lock;
+
+protected:
+  bool charging;
+
+protected:
+  double sim_time_now;
+};
+}  // namespace gazebo
+
+#endif  // BRASS_GAZEBO_BATTERY_BATTERY_DISCHARGE_H

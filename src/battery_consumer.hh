@@ -13,53 +13,69 @@
 
 namespace gazebo
 {
-    class GAZEBO_VISIBLE BatteryConsumerPlugin : public ModelPlugin
-    {
-    // Constructor
-    public: BatteryConsumerPlugin();
+class GAZEBO_VISIBLE BatteryConsumerPlugin : public ModelPlugin
+{
+  // Constructor
+public:
+  BatteryConsumerPlugin();
 
-    public: ~BatteryConsumerPlugin();
+public:
+  ~BatteryConsumerPlugin();
 
-    // Inherited from ModelPlugin
-    public: virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
+  // Inherited from ModelPlugin
+public:
+  virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
 
-    public: virtual void Init();
+public:
+  virtual void Init();
 
-    public: virtual void Reset();
+public:
+  virtual void Reset();
 
-    public: bool SetConsumerPowerLoad(brass_gazebo_battery::SetLoad::Request& req,
-                                      brass_gazebo_battery::SetLoad::Response& res);
+public:
+  bool SetConsumerPowerLoad(brass_gazebo_battery::SetLoad::Request& req, brass_gazebo_battery::SetLoad::Response& res);
 
-    // Connection to the World Update events.
-    protected: event::ConnectionPtr updateConnection;
+  // Connection to the World Update events.
+protected:
+  event::ConnectionPtr updateConnection;
 
-    protected: physics::WorldPtr world;
+protected:
+  physics::WorldPtr world;
 
-    protected: physics::PhysicsEnginePtr physics;
+protected:
+  physics::PhysicsEnginePtr physics;
 
-    protected: physics::ModelPtr model;
+protected:
+  physics::ModelPtr model;
 
-    protected: physics::LinkPtr link;
+protected:
+  physics::LinkPtr link;
 
-    protected: sdf::ElementPtr sdf;
+protected:
+  sdf::ElementPtr sdf;
 
-    // Battery
-    private: common::BatteryPtr battery;
+  // Battery
+private:
+  common::BatteryPtr battery;
 
-    // Consumer identifier
-    private: int32_t consumerId;
+  // Consumer identifier
+private:
+  int32_t consumerId;
 
-    protected: double powerLoad;
+protected:
+  double powerLoad;
 
-    // This node is for ros communications
-    protected: std::unique_ptr<ros::NodeHandle> rosNode;
+  // This node is for ros communications
+protected:
+  std::unique_ptr<ros::NodeHandle> rosNode;
 
-    protected: ros::ServiceServer set_power_load;
+protected:
+  ros::ServiceServer set_power_load;
 
-    protected: boost::mutex lock;
+protected:
+  boost::mutex lock;
+};
 
-    };
+}  // namespace gazebo
 
-}
-
-#endif //BRASS_GAZEBO_BATTERY_BATTERY_CONSUMER_H
+#endif  // BRASS_GAZEBO_BATTERY_BATTERY_CONSUMER_H
