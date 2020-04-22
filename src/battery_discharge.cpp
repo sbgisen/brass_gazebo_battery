@@ -86,9 +86,10 @@ void BatteryPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   }
 
   // Publish a topic for motor power and charge level
-  this->motor_power = this->rosNode->advertise<kobuki_msgs::MotorPower>("/mobile_base/commands/motor_power", 1);
-  this->charge_state = this->rosNode->advertise<std_msgs::Float64>("/mobile_base/commands/charge_level", 1);
-  this->charge_state_mwh = this->rosNode->advertise<std_msgs::Float64>("/mobile_base/commands/charge_level_mwh", 1);
+  std::string topicNamespace = _sdf->Get<std::string>("topic_namespace");
+  this->motor_power = this->rosNode->advertise<kobuki_msgs::MotorPower>(topicNamespace + "/motor_power", 1);
+  this->charge_state = this->rosNode->advertise<std_msgs::Float64>(topicNamespace + "/charge_level", 1);
+  this->charge_state_mwh = this->rosNode->advertise<std_msgs::Float64>(topicNamespace + "/charge_level_mwh", 1);
 
   this->set_charging =
       this->rosNode->advertiseService(this->model->GetName() + "/set_charging", &BatteryPlugin::SetCharging, this);
