@@ -127,31 +127,43 @@ protected:
   std::unique_ptr<ros::NodeHandle> rosNode;
 
 protected:
-  ros::Publisher charge_state;
+  ros::Publisher charge_state_pub;
 
 protected:
-  ros::Publisher charge_state_mwh;
+  ros::Publisher charge_state_mwh_pub;
 
 protected:
-  ros::Publisher motor_power;
+  ros::Publisher motor_power_pub;
 
 protected:
-  ros::ServiceServer set_charging;
+  ros::Publisher charge_current_pub;
 
 protected:
-  ros::ServiceServer set_charge;
+  ros::Publisher battery_voltage_pub;
 
 protected:
-  ros::ServiceServer set_coefficients;
+  ros::Publisher battery_remaining_pub;
 
 protected:
-  ros::ServiceServer set_charging_rate;
+  ros::ServiceServer set_charging_srv;
+
+protected:
+  ros::ServiceServer set_charge_srv;
+
+protected:
+  ros::ServiceServer set_coefficients_srv;
+
+protected:
+  ros::ServiceServer set_charging_rate_srv;
 
 protected:
   boost::mutex lock;
 
 protected:
   bool charging;
+
+protected:
+  bool battery_full;
 
 protected:
   double sim_time_now;

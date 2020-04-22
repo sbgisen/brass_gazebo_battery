@@ -29,6 +29,7 @@ BatteryPlugin::BatteryPlugin()
   this->r = 0.0;
   this->tau = 0.0;
 
+  this->et = 0.0;
   this->e0 = 0.0;
   this->e1 = 0.0;
 
@@ -38,6 +39,8 @@ BatteryPlugin::BatteryPlugin()
 
   this->iraw = 0.0;
   this->ismooth = 0.0;
+  this->charging = false;
+  this->battery_full = false;
 
 #ifdef BATTERY_DEBUG
   gzdbg << "Constructed BatteryPlugin and initialized parameters. \n";
@@ -86,18 +89,21 @@ void BatteryPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   }
 
   // Publish a topic for motor power and charge level
-  this->motor_power = this->rosNode->advertise<kobuki_msgs::MotorPower>("/mobile_base/commands/motor_power", 1);
-  this->charge_state = this->rosNode->advertise<std_msgs::Float64>("/mobile_base/commands/charge_level", 1);
-  this->charge_state_mwh = this->rosNode->advertise<std_msgs::Float64>("/mobile_base/commands/charge_level_mwh", 1);
+  this->motor_power_pub = this->rosNode->advertise<kobuki_msgs::MotorPower>("motor_power", 1);
+  this->charge_state_pub = this->rosNode->advertise<std_msgs::Float64>("charge_level", 1);
+  this->charge_state_mwh_pub = this->rosNode->advertise<std_msgs::Float64>("charge_level_mwh", 1);
+  this->charge_current_pub = this->rosNode->advertise<std_msgs::Float64>("charge_current", 1);
+  this->battery_voltage_pub = this->rosNode->advertise<std_msgs::Float64>("battery_voltage", 1);
+  this->battery_remaining_pub = this->rosNode->advertise<std_msgs::Float64>("battery_remaining", 1);
 
-  this->set_charging =
+  this->set_charging_srv =
       this->rosNode->advertiseService(this->model->GetName() + "/set_charging", &BatteryPlugin::SetCharging, this);
-  this->set_charging_rate = this->rosNode->advertiseService(this->model->GetName() + "/set_charge_rate",
-                                                            &BatteryPlugin::SetChargingRate, this);
-  this->set_charge =
+  this->set_charging_rate_srv = this->rosNode->advertiseService(this->model->GetName() + "/set_charge_rate",
+                                                                &BatteryPlugin::SetChargingRate, this);
+  this->set_charge_srv =
       this->rosNode->advertiseService(this->model->GetName() + "/set_charge", &BatteryPlugin::SetCharge, this);
-  this->set_coefficients = this->rosNode->advertiseService(this->model->GetName() + "/set_model_coefficients",
-                                                           &BatteryPlugin::SetModelCoefficients, this);
+  this->set_coefficients_srv = this->rosNode->advertiseService(this->model->GetName() + "/set_model_coefficients",
+                                                               &BatteryPlugin::SetModelCoefficients, this);
 
   std::string linkName = _sdf->Get<std::string>("link_name");
   this->link = this->model->GetLink(linkName);
@@ -167,8 +173,10 @@ double BatteryPlugin::OnUpdateVoltage(const common::BatteryPtr& _battery)
   double k = dt / this->tau;
 
   if (fabs(_battery->Voltage()) < 1e-3)
+  {
+    ROS_GREEN_STREAM("BatteryPlugin::OnUpdateVoltage -> Battery Voltage is too low: " << _battery->Voltage());
     return 0.0;
-
+  }
   for (auto powerLoad : _battery->PowerLoads())
     totalpower += powerLoad.second;
 
@@ -215,28 +223,40 @@ double BatteryPlugin::OnUpdateVoltage(const common::BatteryPtr& _battery)
 #ifdef BATTERY_DEBUG
     gzdbg << "Out of juice at:" << this->sim_time_now << "\n";
 #endif
-
     this->q = 0;
     kobuki_msgs::MotorPower power_msg;
     power_msg.state = power::OFF;
-    lock.lock();
-    this->motor_power.publish(power_msg);
-    lock.unlock();
+    this->motor_power_pub.publish(power_msg);
   }
   else if (this->q >= this->c)
   {
     this->q = this->c;
+    this->battery_full = true;
+  }
+  else
+  {
+    this->battery_full = false;
   }
 
   std_msgs::Float64 charge_msg, charge_msg_mwh;
   charge_msg.data = this->q;
   charge_msg_mwh.data = this->q * 1000 * this->et;
 
-  lock.lock();
-  this->charge_state.publish(charge_msg);
-  this->charge_state_mwh.publish(charge_msg_mwh);
-  lock.unlock();
+  std_msgs::Float64 charge_cur_msg;
+  charge_cur_msg.data = 0.0;
+  if (this->charging && !this->battery_full)
+  {
+    charge_cur_msg.data = this->qt;
+  }
+  std_msgs::Float64 battery_voltage_msg, battery_remaining_msg;
+  battery_voltage_msg.data = _battery->Voltage();
+  battery_remaining_msg.data = this->q / this->c;
 
+  this->charge_state_pub.publish(charge_msg);
+  this->charge_state_mwh_pub.publish(charge_msg_mwh);
+  this->charge_current_pub.publish(charge_cur_msg);
+  this->battery_voltage_pub.publish(battery_voltage_msg);
+  this->battery_remaining_pub.publish(battery_remaining_msg);
   return et;
 }
 
@@ -261,8 +281,8 @@ bool BatteryPlugin::SetCharging(brass_gazebo_battery::SetCharging::Request& req,
 #endif
     ROS_GREEN_STREAM("Bot disconnected from the charging station");
   }
-  lock.unlock();
   res.result = true;
+  lock.unlock();
   return true;
 }
 
@@ -275,8 +295,8 @@ bool BatteryPlugin::SetChargingRate(brass_gazebo_battery::SetChargingRate::Reque
   gzdbg << "Charging rate has been changed to: " << this->qt << "\n";
 #endif
   ROS_GREEN_STREAM("Charging rate has been changed to: " << this->qt);
-  lock.unlock();
   res.result = true;
+  lock.unlock();
   return true;
 }
 
@@ -297,8 +317,8 @@ bool BatteryPlugin::SetCharge(brass_gazebo_battery::SetCharge::Request& req,
     this->q = this->c;
     ROS_RED_STREAM("The charge cannot be higher than the capacity of the battery");
   }
-  lock.unlock();
   res.result = true;
+  lock.unlock();
   return true;
 }
 
@@ -312,7 +332,7 @@ bool BatteryPlugin::SetModelCoefficients(brass_gazebo_battery::SetCoef::Request&
   gzdbg << "Power model is changed, new coefficients (constant, linear):" << this->e0 << this->e1 << "\n";
 #endif
   ROS_GREEN_STREAM("Power model is changed, new coefficients (constant, linear):" << this->e0 << this->e1);
-  lock.unlock();
   res.result = true;
+  lock.unlock();
   return true;
 }
