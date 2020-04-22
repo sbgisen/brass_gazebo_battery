@@ -13,34 +13,28 @@ find_package(catkin REQUIRED COMPONENTS
   gazebo_ros
   roscpp
   message_generation
+  gencpp
+  gazebo_msgs
+  rospy
+  nodelet
+  angles
+  std_srvs
+  sensor_msgs
+  nav_msgs
+  urdf
+  tf
+  tf2_ros
+  dynamic_reconfigure
+  rosgraph_msgs
+  trajectory_msgs
+  image_transport
+  rosconsole
+  cv_bridge
+  polled_camera
+  diagnostic_updater
+  camera_info_manager
+  kobuki_msgs
 )
-
-find_package(catkin REQUIRED COMPONENTS
-        gazebo_dev
-        gencpp
-        message_generation
-        gazebo_msgs
-        roscpp
-        rospy
-        nodelet
-        angles
-        std_srvs
-        geometry_msgs
-        sensor_msgs
-        nav_msgs
-        urdf
-        tf
-        tf2_ros
-        dynamic_reconfigure
-        rosgraph_msgs
-        trajectory_msgs
-        image_transport
-        rosconsole
-        cv_bridge
-        polled_camera
-        diagnostic_updater
-        camera_info_manager
-        )
 
 find_package(ignition-math2 REQUIRED)
 
