@@ -89,13 +89,12 @@ void BatteryPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   }
 
   // Publish a topic for motor power and charge level
-  std::string topicNamespace = _sdf->Get<std::string>("topic_namespace");
-  this->motor_power_pub = this->rosNode->advertise<kobuki_msgs::MotorPower>(topicNamespace + "/motor_power", 1);
-  this->charge_state_pub = this->rosNode->advertise<std_msgs::Float64>(topicNamespace + "/charge_level", 1);
-  this->charge_state_mwh_pub = this->rosNode->advertise<std_msgs::Float64>(topicNamespace + "/charge_level_mwh", 1);
-  this->charge_current_pub = this->rosNode->advertise<std_msgs::Float64>(topicNamespace + "/charge_current", 1);
-  this->battery_voltage_pub = this->rosNode->advertise<std_msgs::Float64>(topicNamespace + "/battery_voltage", 1);
-  this->battery_remaining_pub = this->rosNode->advertise<std_msgs::Float64>(topicNamespace + "/battery_remaining", 1);
+  this->motor_power_pub = this->rosNode->advertise<kobuki_msgs::MotorPower>("motor_power", 1);
+  this->charge_state_pub = this->rosNode->advertise<std_msgs::Float64>("charge_level", 1);
+  this->charge_state_mwh_pub = this->rosNode->advertise<std_msgs::Float64>("charge_level_mwh", 1);
+  this->charge_current_pub = this->rosNode->advertise<std_msgs::Float64>("charge_current", 1);
+  this->battery_voltage_pub = this->rosNode->advertise<std_msgs::Float64>("battery_voltage", 1);
+  this->battery_remaining_pub = this->rosNode->advertise<std_msgs::Float64>("battery_remaining", 1);
 
   this->set_charging_srv =
       this->rosNode->advertiseService(this->model->GetName() + "/set_charging", &BatteryPlugin::SetCharging, this);
