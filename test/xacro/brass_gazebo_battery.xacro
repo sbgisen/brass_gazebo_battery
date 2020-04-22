@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="box_inertial" params="mass origin d w h">
+    <inertial>
+      <origin xyz="${origin}" rpy="0 0 0"/>
+      <mass value="${mass}"/>
+      <inertia ixx="${mass * (w ** 2 + h ** 2) / 12}"
+               ixy="0.0" iyy="${mass * (d ** 2 + h ** 2) / 12}"
+               ixz="0.0" iyz="0.0" izz="${mass * (w ** 2 + d ** 2) / 12}"/> 
+    </inertial>
+  </xacro:macro>
+  <xacro:macro name="brass_gazebo_battery_plugin" params="parent_link voltage capacity_ah charge_current discharge_current">
+    <joint name="parent_to_battery_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="${parent_link}" />
+        <child link="battery_link" />
+        <axis xyz="1 0 0"/>
+        <limit upper="0" lower="0" effort="0" velocity="0" />
+    </joint>
+    <link name="battery_link">
+      <collision>
+        <origin xyz="0 0 0.3" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.2 0.2 0.2"/>
+        </geometry>
+      </collision>
+      <xacro:box_inertial mass="2" origin="0 0 0.3" d="0.2" w="0.2" h="0.2"/> 
+    </link>
+    <gazebo reference="battery_link">
+      <battery name="brass_battery">
+        <voltage>${voltage}</voltage>
+      </battery>
+    </gazebo>
+
+    <gazebo>
+      <plugin name="battery_discharge_plugin" filename="libbattery_discharge.so">
+        <ros_node>gazebo/battery_simulation_client</ros_node>
+        <link_name>battery_link</link_name>
+        <battery_name>brass_battery</battery_name>
+        <constant_coef>${voltage}</constant_coef>
+        <linear_coef>${-voltage/4}</linear_coef>
+        <initial_charge>${capacity_ah}</initial_charge>
+        <capacity>${capacity_ah}</capacity>
+        <resistance>0.061523</resistance>
+        <smooth_current_tau>1.9499</smooth_current_tau>
+        <charge_rate>${charge_current}</charge_rate>
+      </plugin>
+      <plugin name="battery_consumer_plugin" filename="libbattery_consumer.so">
+        <ros_node>gazebo/battery_simulation_client</ros_node>
+        <link_name>battery_link</link_name>
+        <battery_name>brass_battery</battery_name>
+        <power_load>${discharge_current * voltage}</power_load>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+</robot>
