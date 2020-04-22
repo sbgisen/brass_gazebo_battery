@@ -163,6 +163,9 @@ protected:
   bool charging;
 
 protected:
+  bool battery_full;
+
+protected:
   double sim_time_now;
 };
 }  // namespace gazebo

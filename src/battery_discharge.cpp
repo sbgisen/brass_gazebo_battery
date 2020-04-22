@@ -40,6 +40,7 @@ BatteryPlugin::BatteryPlugin()
   this->iraw = 0.0;
   this->ismooth = 0.0;
   this->charging = false;
+  this->battery_full = false;
 
 #ifdef BATTERY_DEBUG
   gzdbg << "Constructed BatteryPlugin and initialized parameters. \n";
@@ -99,11 +100,11 @@ void BatteryPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->set_charging_srv =
       this->rosNode->advertiseService(this->model->GetName() + "/set_charging", &BatteryPlugin::SetCharging, this);
   this->set_charging_rate_srv = this->rosNode->advertiseService(this->model->GetName() + "/set_charge_rate",
-                                                            &BatteryPlugin::SetChargingRate, this);
+                                                                &BatteryPlugin::SetChargingRate, this);
   this->set_charge_srv =
       this->rosNode->advertiseService(this->model->GetName() + "/set_charge", &BatteryPlugin::SetCharge, this);
   this->set_coefficients_srv = this->rosNode->advertiseService(this->model->GetName() + "/set_model_coefficients",
-                                                           &BatteryPlugin::SetModelCoefficients, this);
+                                                               &BatteryPlugin::SetModelCoefficients, this);
 
   std::string linkName = _sdf->Get<std::string>("link_name");
   this->link = this->model->GetLink(linkName);
@@ -231,6 +232,11 @@ double BatteryPlugin::OnUpdateVoltage(const common::BatteryPtr& _battery)
   else if (this->q >= this->c)
   {
     this->q = this->c;
+    this->battery_full = true;
+  }
+  else
+  {
+    this->battery_full = false;
   }
 
   std_msgs::Float64 charge_msg, charge_msg_mwh;
@@ -239,9 +245,9 @@ double BatteryPlugin::OnUpdateVoltage(const common::BatteryPtr& _battery)
 
   std_msgs::Float64 charge_cur_msg;
   charge_cur_msg.data = 0.0;
-  if (this->charging)
+  if (this->charging && !this->battery_full)
   {
-    charge_cur_msg.data = this->ismooth;
+    charge_cur_msg.data = this->qt;
   }
   std_msgs::Float64 battery_voltage_msg, battery_remaining_msg;
   battery_voltage_msg.data = _battery->Voltage();
