@@ -136,6 +136,15 @@ protected:
   ros::Publisher motor_power;
 
 protected:
+  ros::Publisher charge_current;
+
+protected:
+  ros::Publisher battery_voltage;
+
+protected:
+  ros::Publisher battery_remaining;
+
+protected:
   ros::ServiceServer set_charging;
 
 protected:

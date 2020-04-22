@@ -29,6 +29,7 @@ BatteryPlugin::BatteryPlugin()
   this->r = 0.0;
   this->tau = 0.0;
 
+  this->et = 0.0;
   this->e0 = 0.0;
   this->e1 = 0.0;
 
@@ -38,6 +39,7 @@ BatteryPlugin::BatteryPlugin()
 
   this->iraw = 0.0;
   this->ismooth = 0.0;
+  this->charging = false;
 
 #ifdef BATTERY_DEBUG
   gzdbg << "Constructed BatteryPlugin and initialized parameters. \n";
@@ -90,6 +92,9 @@ void BatteryPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->motor_power = this->rosNode->advertise<kobuki_msgs::MotorPower>(topicNamespace + "/motor_power", 1);
   this->charge_state = this->rosNode->advertise<std_msgs::Float64>(topicNamespace + "/charge_level", 1);
   this->charge_state_mwh = this->rosNode->advertise<std_msgs::Float64>(topicNamespace + "/charge_level_mwh", 1);
+  this->charge_current = this->rosNode->advertise<std_msgs::Float64>(topicNamespace + "/charge_current", 1);
+  this->battery_voltage = this->rosNode->advertise<std_msgs::Float64>(topicNamespace + "/battery_voltage", 1);
+  this->battery_remaining = this->rosNode->advertise<std_msgs::Float64>(topicNamespace + "/battery_remaining", 1);
 
   this->set_charging =
       this->rosNode->advertiseService(this->model->GetName() + "/set_charging", &BatteryPlugin::SetCharging, this);
@@ -168,8 +173,10 @@ double BatteryPlugin::OnUpdateVoltage(const common::BatteryPtr& _battery)
   double k = dt / this->tau;
 
   if (fabs(_battery->Voltage()) < 1e-3)
+  {
+    ROS_GREEN_STREAM("BatteryPlugin::OnUpdateVoltage -> Battery Voltage is too low: " << _battery->Voltage());
     return 0.0;
-
+  }
   for (auto powerLoad : _battery->PowerLoads())
     totalpower += powerLoad.second;
 
@@ -216,13 +223,10 @@ double BatteryPlugin::OnUpdateVoltage(const common::BatteryPtr& _battery)
 #ifdef BATTERY_DEBUG
     gzdbg << "Out of juice at:" << this->sim_time_now << "\n";
 #endif
-
     this->q = 0;
     kobuki_msgs::MotorPower power_msg;
     power_msg.state = power::OFF;
-    lock.lock();
     this->motor_power.publish(power_msg);
-    lock.unlock();
   }
   else if (this->q >= this->c)
   {
@@ -233,11 +237,21 @@ double BatteryPlugin::OnUpdateVoltage(const common::BatteryPtr& _battery)
   charge_msg.data = this->q;
   charge_msg_mwh.data = this->q * 1000 * this->et;
 
-  lock.lock();
+  std_msgs::Float64 charge_cur_msg;
+  charge_cur_msg.data = 0.0;
+  if (this->charging)
+  {
+    charge_cur_msg.data = this->ismooth;
+  }
+  std_msgs::Float64 battery_voltage_msg, battery_remaining_msg;
+  battery_voltage_msg.data = _battery->Voltage();
+  battery_remaining_msg.data = this->q / this->c;
+
   this->charge_state.publish(charge_msg);
   this->charge_state_mwh.publish(charge_msg_mwh);
-  lock.unlock();
-
+  this->charge_current.publish(charge_cur_msg);
+  this->battery_voltage.publish(battery_voltage_msg);
+  this->battery_remaining.publish(battery_remaining_msg);
   return et;
 }
 
@@ -262,8 +276,8 @@ bool BatteryPlugin::SetCharging(brass_gazebo_battery::SetCharging::Request& req,
 #endif
     ROS_GREEN_STREAM("Bot disconnected from the charging station");
   }
-  lock.unlock();
   res.result = true;
+  lock.unlock();
   return true;
 }
 
@@ -276,8 +290,8 @@ bool BatteryPlugin::SetChargingRate(brass_gazebo_battery::SetChargingRate::Reque
   gzdbg << "Charging rate has been changed to: " << this->qt << "\n";
 #endif
   ROS_GREEN_STREAM("Charging rate has been changed to: " << this->qt);
-  lock.unlock();
   res.result = true;
+  lock.unlock();
   return true;
 }
 
@@ -298,8 +312,8 @@ bool BatteryPlugin::SetCharge(brass_gazebo_battery::SetCharge::Request& req,
     this->q = this->c;
     ROS_RED_STREAM("The charge cannot be higher than the capacity of the battery");
   }
-  lock.unlock();
   res.result = true;
+  lock.unlock();
   return true;
 }
 
@@ -313,7 +327,7 @@ bool BatteryPlugin::SetModelCoefficients(brass_gazebo_battery::SetCoef::Request&
   gzdbg << "Power model is changed, new coefficients (constant, linear):" << this->e0 << this->e1 << "\n";
 #endif
   ROS_GREEN_STREAM("Power model is changed, new coefficients (constant, linear):" << this->e0 << this->e1);
-  lock.unlock();
   res.result = true;
+  lock.unlock();
   return true;
 }
