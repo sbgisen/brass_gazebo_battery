@@ -72,7 +72,11 @@ void BatteryPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->model = _model;
   this->world = _model->GetWorld();
 
+#if GAZEBO_MAJOR_VERSION < 8
   this->sim_time_now = this->world->GetSimTime().Double();
+#else
+  this->sim_time_now = this->world->SimTime().Double();
+#endif
 
   // Create ros node and publish stuff there!
   this->rosNode.reset(new ros::NodeHandle(_sdf->Get<std::string>("ros_node")));
@@ -122,7 +126,11 @@ void BatteryPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // Specifying a custom update function
   this->battery->SetUpdateFunc(std::bind(&BatteryPlugin::OnUpdateVoltage, this, std::placeholders::_1));
 
+#if GAZEBO_MAJOR_VERSION < 8
   this->sim_time_now = this->world->GetSimTime().Double();
+#else
+  this->sim_time_now = this->world->SimTime().Double();
+#endif
 
 #ifdef BATTERY_DEBUG
   gzdbg << "Loaded the BatteryPlugin at time:" << this->sim_time_now << "\n";
@@ -150,7 +158,11 @@ void BatteryPlugin::Reset()
 
 double BatteryPlugin::OnUpdateVoltage(const common::BatteryPtr& _battery)
 {
+#if GAZEBO_MAJOR_VERSION < 8
   double dt = this->world->GetPhysicsEngine()->GetMaxStepSize();
+#else
+  double dt = this->world->Physics()->GetMaxStepSize();
+#endif
   double totalpower = 0.0;
   double k = dt / this->tau;
 
@@ -174,7 +186,11 @@ double BatteryPlugin::OnUpdateVoltage(const common::BatteryPtr& _battery)
     this->q = this->q + GZ_SEC_TO_HOUR(dt * this->qt);
   }
 
+#if GAZEBO_MAJOR_VERSION < 8
   this->sim_time_now = this->world->GetSimTime().Double();
+#else
+  this->sim_time_now = this->world->SimTime().Double();
+#endif
 
 #ifdef BATTERY_DEBUG
   gzdbg << "Current charge:" << this->q << ", at:" << this->sim_time_now << "\n";
@@ -190,7 +206,11 @@ double BatteryPlugin::OnUpdateVoltage(const common::BatteryPtr& _battery)
   // Turn off the motor
   if (this->q <= 0)
   {
+#if GAZEBO_MAJOR_VERSION < 8
     this->sim_time_now = this->world->GetSimTime().Double();
+#else
+    this->sim_time_now = this->world->SimTime().Double();
+#endif
 
 #ifdef BATTERY_DEBUG
     gzdbg << "Out of juice at:" << this->sim_time_now << "\n";
