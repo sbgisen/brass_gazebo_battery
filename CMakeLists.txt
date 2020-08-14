@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(brass_gazebo_battery)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -36,7 +36,7 @@ find_package(catkin REQUIRED COMPONENTS
   kobuki_msgs
 )
 
-find_package(ignition-math2 REQUIRED)
+find_package(ignition-math4 REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -145,7 +145,7 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
-  ${IGNITION-MATH2_INCLUDE_DIRS}
+  ${IGNITION-MATH4_INCLUDE_DIRS}
 )
 
 IF(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
