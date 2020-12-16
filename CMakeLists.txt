@@ -36,8 +36,6 @@ find_package(catkin REQUIRED COMPONENTS
   kobuki_msgs
 )
 
-find_package(ignition-math2 REQUIRED)
-
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -145,7 +143,7 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
-  ${IGNITION-MATH2_INCLUDE_DIRS}
+  ${IGNITION-MATH_INCLUDE_DIRS}
 )
 
 IF(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
